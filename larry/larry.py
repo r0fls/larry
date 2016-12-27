@@ -55,20 +55,26 @@ class CacheStore:
     def __init__(self, backend=None):
         if backend is None:
             self.backend = dict()
+        else:
+            self.backend = backend
 
 
     def __getitem__(self, key):
         if isinstance(self.backend, dict):
             return self.backend.get(key)
+        if isinstance(self.backend, Redis):
+            return self.backend.conn.get(key)
 
 
     def __setitem__(self, key, value):
         if isinstance(self.backend, Redis):
-            self.backend.set(key, value)
+            self.backend.conn.set(key, value)
         elif isinstance(self.backend, dict):
             self.backend[key] = value
 
     def get(self, key):
+        if isinstance(self.backend, Redis):
+            return self.backend.conn.get(key)
         try:
             return self.backend[key]
         except:
