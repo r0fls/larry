@@ -9,6 +9,8 @@ app = Sanic()
 from larry import Cache
 cache = Cache()
 
+# We set the cache to start at 1
+# because the request object is not hashable
 @app.route("/<param>")
 @cache.cache(start=1)
 def hello(request, param):

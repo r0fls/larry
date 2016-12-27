@@ -1,8 +1,9 @@
 import functools
+from .backends import Redis
 
 class Cache:
 
-    def __init__(self, backend=None):
+    def __init__(self):
         self.funcs = dict()
 
     def cache(self, start=0, keys=[], backend=None):
@@ -17,8 +18,12 @@ class Cache:
             be in cache key, but isn't an explicit function argument.
         :param backend: redis, mongo, file, custom, etc.. (NOT CURRENTLY IMPLEMENTED)
         '''
+
+        # TODO
+        # Fix the eval situation
         def _cache(func):
-            self.funcs[func.__name__] = func_cache = FunctionKey(func)
+            self.funcs[func.__name__] = func_cache = FunctionKey(func,
+                                                                 backend)
             @functools.wraps(func)
             def new_func(*args, **kwargs):
                 key = (
@@ -37,10 +42,11 @@ class Cache:
 
 
 class FunctionKey:
-    def __init__(self, func, backend=None):
+    def __init__(self, func, backend=None, keys=None):
         self.func = func
         self.hits = 0
         self.misses = 0
+        self.keys = None
         self.store = CacheStore(backend)
 
 
@@ -57,9 +63,10 @@ class CacheStore:
 
 
     def __setitem__(self, key, value):
-        if isinstance(self.backend, dict):
+        if isinstance(self.backend, Redis):
+            self.backend.set(key, value)
+        elif isinstance(self.backend, dict):
             self.backend[key] = value
-
 
     def get(self, key):
         try:
