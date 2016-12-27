@@ -9,8 +9,8 @@ def test_cache():
 
     hello()
     hello()
-    assert cache.hits == 1
-    assert cache.misses == 1
+    assert cache.funcs['hello'].hits == 1
+    assert cache.funcs['hello'].misses == 1
 
 def test_cache_params():
     cache = Cache()
@@ -22,6 +22,7 @@ def test_cache_params():
     hello2('raphael')
     hello2('luke')
     hello2('raphael')
-    print(cache.store)
-    assert cache.hits == 1
-    assert cache.misses == 2
+    hello2('luke')
+    hello2('bob')
+    assert cache.funcs['hello2'].hits == 2
+    assert cache.funcs['hello2'].misses == 3

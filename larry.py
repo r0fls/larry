@@ -1,10 +1,9 @@
+import functools
+
 class Cache:
 
     def __init__(self, backend=None):
-        self.hits = 0
-        self.misses = 0
-        self.store = CacheStore()
-
+        self.funcs = dict()
 
     def cache(self, start=0, keys=[], backend=None):
         '''
@@ -19,23 +18,25 @@ class Cache:
         :param backend: redis, mongo, file, custom, etc.. (NOT CURRENTLY IMPLEMENTED)
         '''
         def _cache(func):
+            self.funcs[func.__name__] = func_cache = FunctionKey(func)
+            @functools.wraps(func)
             def new_func(*args, **kwargs):
-                key = (hash(func),
+                key = (
                        hash(args[start:] + tuple(eval(i) for i in keys)),
                        hash(tuple(sorted(kwargs.items())))
                       )
-                if not self.store.get(key):
-                    self.misses += 1
-                    self.store[key] = func(*args, **kwargs)
+                if not func_cache.store.get(key):
+                    func_cache.misses += 1
+                    func_cache.store[key] = func(*args, **kwargs)
                 else:
-                    self.hits += 1
-                return self.store[key]
+                    func_cache.hits += 1
+                return func_cache.store[key]
             return new_func
 
         return _cache
 
 
-class FunctionKeys:
+class FunctionKey:
     def __init__(self, func, backend=None):
         self.func = func
         self.hits = 0
