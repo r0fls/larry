@@ -1,5 +1,6 @@
 import functools
 from .backends import Redis
+import dill
 
 class Cache:
 
@@ -62,19 +63,24 @@ class CacheStore:
     def __getitem__(self, key):
         if isinstance(self.backend, dict):
             return self.backend.get(key)
-        if isinstance(self.backend, Redis):
-            return self.backend.conn.get(key)
-
+        elif isinstance(self.backend, Redis):
+            try:
+                return dill.loads(self.backend.conn.get(key))
+            except:
+                return None
 
     def __setitem__(self, key, value):
         if isinstance(self.backend, Redis):
-            self.backend.conn.set(key, value)
+            self.backend.conn.set(key, dill.dumps(value))
         elif isinstance(self.backend, dict):
             self.backend[key] = value
 
     def get(self, key):
         if isinstance(self.backend, Redis):
-            return self.backend.conn.get(key)
+            try:
+                return dill.loads(self.backend.conn.get(key))
+            except:
+                return None
         try:
             return self.backend[key]
         except:
