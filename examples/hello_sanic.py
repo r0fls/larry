@@ -15,9 +15,8 @@ cache = Cache()
 @cache.cache(start=1)
 def hello(request, param):
     s = [i**2 for i in range(int(param))]
-    log.info("hits: "+ str(cache.hits))
-    log.info("misses: "+ str(cache.misses))
-    log.info(cache.store)
+    log.info("hits: "+ str(cache.funcs['hello'].hits))
+    log.info("misses: "+ str(cache.funcs['hello'].misses))
     return text(s[-1])
 
 app.run(port=8000, debug=True)
