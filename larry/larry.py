@@ -7,30 +7,28 @@ class Cache:
     def __init__(self):
         self.funcs = dict()
 
-    def cache(self, start=0, keys=[], backend=None):
+    def cache(self, start=0, backend=None):
         '''
         Decorate a function to make it cacheable.
         :param start: start cache key after argument number.
         :param exclude: exclude argument positions or names. Note that numeric
             args will exlude both the position in args and any kwargs with the
             numeric key. (NOT CURRENTLY IMPLEMENTED)
-        :param keys: string list of extra keys that are not defined at function
-            execution, e.g. `request.body` is typically  something that should
-            be in cache key, but isn't an explicit function argument.
         :param backend: redis, mongo, file, custom, etc.. (NOT CURRENTLY IMPLEMENTED)
         '''
 
-        # TODO
-        # Fix the eval situation
         def _cache(func):
             self.funcs[func.__name__] = func_cache = FunctionKey(func,
                                                                  backend)
             @functools.wraps(func)
             def new_func(*args, **kwargs):
                 key = (
-                       hash(args[start:] + tuple(eval(i) for i in keys)),
+                       hash(args[start:]),
                        hash(tuple(sorted(kwargs.items())))
                       )
+                if self.funcs[func.__name__].keys is not None:
+                    key += (hash(tuple(dill.dumps(i) for i
+                                       in self.funcs[func.__name__].keys)), )
                 if not func_cache.store.get(key):
                     func_cache.misses += 1
                     func_cache.store[key] = func(*args, **kwargs)
