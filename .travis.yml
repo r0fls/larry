@@ -5,9 +5,7 @@ python:
     - '3.5'
     - '3.6'
 
-script: python3 -m pytest -v tests
-
-install: "pip install pytest"
+script: python -m pytest -v tests
 
 notifications:
   email: false
