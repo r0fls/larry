@@ -7,5 +7,7 @@ python:
 
 script: python3 -m pytest -v tests
 
+install: "pip install pytest"
+
 notifications:
   email: false
