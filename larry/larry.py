@@ -5,7 +5,7 @@ import dill
 class Cache:
 
     def __init__(self):
-        self.funcs = dict()
+        self.funcs = Funcs()
 
     def cache(self, start=0, backend=None):
         '''
@@ -23,12 +23,13 @@ class Cache:
             @functools.wraps(func)
             def new_func(*args, **kwargs):
                 key = (
-                       hash(args[start:]),
-                       hash(tuple(sorted(kwargs.items())))
+                       args[start:],
+                       tuple(sorted(kwargs.items()))
                       )
                 if self.funcs[func.__name__].keys is not None:
-                    key += (hash(tuple(dill.dumps(i) for i
-                                       in self.funcs[func.__name__].keys)), )
+                    key += tuple(dill.dumps(i) for i
+                                       in self.funcs[func.__name__].keys)
+                key = hash(key)
                 if not func_cache.store.get(key):
                     func_cache.misses += 1
                     func_cache.store[key] = func(*args, **kwargs)
@@ -39,6 +40,24 @@ class Cache:
 
         return _cache
 
+
+class Funcs:
+    def __init__(self):
+        self.funcs = dict()
+
+    def __getitem__(self, key):
+        if callable(key):
+            key = key.__name__
+        return self.funcs[key]
+
+    def __setitem__(self, key, value):
+        self.funcs[key] = value
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except:
+            return default
 
 class FunctionKey:
     def __init__(self, func, backend=None, keys=None):
@@ -73,13 +92,11 @@ class CacheStore:
         elif isinstance(self.backend, dict):
             self.backend[key] = value
 
-    def get(self, key):
-        if isinstance(self.backend, Redis):
-            try:
-                return dill.loads(self.backend.conn.get(key))
-            except:
-                return None
+    def get(self, key, default=None):
         try:
-            return self.backend[key]
+            if isinstance(self.backend, Redis):
+                return dill.loads(self.backend.conn.get(key))
+            else:
+                return self.backend[key]
         except:
-            return None
+            return default

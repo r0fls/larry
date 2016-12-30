@@ -10,7 +10,7 @@ def test_cache():
 
     hello()
     hello()
-    assert cache.funcs['hello'].hits == 1
+    assert cache.funcs[hello].hits == 1
     assert cache.funcs['hello'].misses == 1
 
 
