@@ -4,10 +4,9 @@ import dill
 
 class Cache:
 
-    def __init__(self):
-        self.funcs = Funcs()
+    def __init__(self): self.funcs = Funcs()
 
-    def cache(self, start=0, backend=None):
+    def cache(self, start=0, backend=None, expires=None):
         '''
         Decorate a function to make it cacheable.
         :param start: start cache key after argument number.
@@ -32,7 +31,11 @@ class Cache:
                 key = hash(key)
                 if not func_cache.store.get(key):
                     func_cache.misses += 1
-                    func_cache.store[key] = func(*args, **kwargs)
+                    if expires is None:
+                        func_cache.store[key] = func(*args, **kwargs)
+                    else:
+                        func_cache.store.set(key, func(*args, **kwargs),
+                                             expires=expires)
                 else:
                     func_cache.hits += 1
                 return func_cache.store[key]
@@ -58,6 +61,7 @@ class Funcs:
             return self[key]
         except:
             return default
+
 
 class FunctionKey:
     def __init__(self, func, backend=None, keys=None):
@@ -86,11 +90,20 @@ class CacheStore:
             except:
                 return None
 
+
     def __setitem__(self, key, value):
         if isinstance(self.backend, Redis):
             self.backend.conn.set(key, dill.dumps(value))
         elif isinstance(self.backend, dict):
             self.backend[key] = value
+
+
+    def set(self, key, value, expires=None):
+        if expires is None:
+            self.backend.conn.setex(key, dill.dumps(value))
+        else:
+            self.backend.conn.set(key, dill.dumps(value), expires)
+
 
     def get(self, key, default=None):
         try:
