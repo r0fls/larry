@@ -12,7 +12,7 @@ log = logging.getLogger()
 # We set the cache to start at 1
 # because the request object is not hashable
 @app.route("/<param>")
-@cache.cache(start=1, backend=Redis(), expires=10)
+@cache.cache(start=1, backend=Redis(host='localhost', port=6379), expires=10)
 def hello(request, param):
     s = [i**2 for i in range(int(param))]
     log.info("hits: " + str(cache.funcs['hello'].hits))
