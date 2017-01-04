@@ -15,8 +15,7 @@ def hello(param):
 hello(100000)
 # hit
 hello(100000)
-
-# cache expires
+# expire cache
 sleep(3)
 # miss
 hello(100000)
